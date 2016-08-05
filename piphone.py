@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 import sys
+import time
 import pjsua as pj
+import Adafruit_CharLCD as LCD
+
+lcd = LCD.Adafruit_CharLCDPlate()
 
 LOG_LEVEL=3
 current_call = None
@@ -22,7 +26,8 @@ class MyAccountCallback(pj.AccountCallback):
         if current_call:
             call.answer(486, "Busy")
             return
-            
+        lcd.clear()
+        lcd.message("call from:\n"+str(call.info().remote_uri))    
         print "Incoming call from ", call.info().remote_uri
         print "Press 'a' to answer"
 
@@ -51,6 +56,10 @@ class MyCallCallback(pj.CallCallback):
         if self.call.info().state == pj.CallState.DISCONNECTED:
             current_call = None
             print 'Current call is', current_call
+            lcd.clear()
+            lcd.message("call ended")
+            time.sleep(3.0)
+            lcd.clear()
 
     # Notification when call's media state has changed.
     def on_media_state(self):
@@ -66,6 +75,7 @@ class MyCallCallback(pj.CallCallback):
 # Function to make call
 def make_call(uri):
     try:
+        lcd.message("calling: \n"+uri)
         print "Making call to", uri
         return acc.make_call(uri, cb=MyCallCallback())
     except pj.Error, e:
@@ -128,7 +138,7 @@ try:
             current_call = make_call(input)
             del lck
 
-        elif input == "h":
+        elif input == "h" or lcd.is_pressed(LCD.SELECT):
             if not current_call:
                 print "There is no call"
                 continue
